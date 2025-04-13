@@ -1,3 +1,11 @@
+
+Python 3.10.13
+streamlink
+cv2
+subprocess
+whisper
+irc.bot
+
 # Streamlit App and Computer Vision
 streamlit
 torch
