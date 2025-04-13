@@ -1,5 +1,4 @@
 import subprocess
-import io
 import whisper
 import time
 import numpy as np
