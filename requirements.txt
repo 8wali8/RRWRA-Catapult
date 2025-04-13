@@ -1,0 +1,19 @@
+# Streamlit App and Computer Vision
+streamlit
+torch
+torchvision
+torchaudio
+opencv-python
+pillow
+tqdm
+ultralytics
+faiss-cpu
+git+https://github.com/facebookresearch/segment-anything.git
+git+https://github.com/openai/CLIP.git
+
+# NLP + Sentiment Analysis
+numpy
+pandas
+scikit-learn
+nltk
+tensorflow
