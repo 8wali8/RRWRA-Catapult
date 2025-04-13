@@ -2,8 +2,17 @@ import subprocess
 import whisper
 import time
 import numpy as np
+import sys
 
-TWITCH_URL = "https://twitch.tv/jynxzi"  # Replace with your desired stream
+if len(sys.argv) < 2:
+    print("⚠️ No streamer username provided.")
+    sys.exit(1)
+
+streamer = sys.argv[1]
+print(f"[DEBUG]: {streamer}")
+
+# STREAMER = 'jynxzi'
+TWITCH_URL = f"https://twitch.tv/{streamer}"  # Replace with your desired stream
 CHUNK_SECONDS = 5
 SAMPLE_RATE = 16000
 BYTES_PER_SAMPLE = 2
@@ -38,7 +47,9 @@ def transcribe_chunk():
 
     # Now pass it directly to Whisper
     result = model.transcribe(audio_np, language='en', fp16=False)
-    print("[TRANSCRIPT]", result['text'])
+    with open(f"stream_data/transcript-{streamer}.txt", "a") as f:
+        f.write(f"{result['text']}\n")
+    # print("[TRANSCRIPT]", result['text'])
 
 try:
     print("[INFO] Starting transcription...")

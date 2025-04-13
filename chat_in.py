@@ -1,7 +1,16 @@
 import irc.bot
+import sys
+
+if len(sys.argv) < 2:
+    print("⚠️ No streamer username provided.")
+    sys.exit(1)
+
+streamer = sys.argv[1]
+
+print(f"[DEBUG]: {streamer}")
 
 # Configuration
-CHANNEL = "#caedrel"  # Change to the streamer's channel name (e.g., "#ninja")
+CHANNEL = f"#{streamer}"  # Change to the streamer's channel name (e.g., "#ninja")
 OAUTH_TOKEN = "oauth:sefzdi9vlhm4gi8dq1foej9d9s11ox"  # Replace with your OAuth token
 USERNAME = "four__dots"
 TWITCH_SERVER = "irc.chat.twitch.tv"
@@ -17,7 +26,9 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
         connection.join(CHANNEL)
 
     def on_pubmsg(self, connection, event):
-        print(f"[CHAT] {event.source.split('!')[0]}: {event.arguments[0]}")
+        with open(f"stream_data/chatlog-{streamer}.txt", "a") as f:
+            f.write(f"[CHAT] {event.source.split('!')[0]}: {event.arguments[0]}\n")
+        # print(f"[CHAT] {event.source.split('!')[0]}: {event.arguments[0]}")
 
     def on_disconnect(self, connection, event):
         print("[INFO] Disconnected from Twitch chat.")
