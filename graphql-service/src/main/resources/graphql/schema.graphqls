@@ -1,0 +1,687 @@
+# Enterprise Streaming Analytics GraphQL Schema
+# Comprehensive API for all streaming platform data
+
+scalar DateTime
+scalar JSON
+scalar Upload
+
+# Root Query Type
+type Query {
+    # Streamer Operations
+    streamer(id: ID!): Streamer
+    streamers(filter: StreamerFilter, pagination: PaginationInput): StreamerConnection!
+    searchStreamers(query: String!, limit: Int = 10): [Streamer!]!
+    
+    # Chat Operations
+    chatRoom(id: ID!): ChatRoom
+    chatRooms(streamerId: ID, filter: ChatRoomFilter): [ChatRoom!]!
+    chatMessages(roomId: ID!, pagination: PaginationInput): MessageConnection!
+    
+    # Video Analysis
+    videoAnalysis(streamId: ID!, timeRange: TimeRangeInput): VideoAnalysisResult!
+    objectDetections(streamId: ID!, timeRange: TimeRangeInput): [ObjectDetection!]!
+    sponsorDetections(streamId: ID!, timeRange: TimeRangeInput): [SponsorDetection!]!
+    
+    # Sentiment Analysis
+    sentimentAnalysis(streamerId: ID!, timeRange: TimeRangeInput): SentimentAnalysisResult!
+    emotionTrends(streamerId: ID!, timeRange: TimeRangeInput): [EmotionTrend!]!
+    
+    # Analytics & Insights
+    streamingAnalytics(streamerId: ID!, timeRange: TimeRangeInput): StreamingAnalytics!
+    realtimeMetrics(streamerId: ID!): RealtimeMetrics!
+    audienceInsights(streamerId: ID!, timeRange: TimeRangeInput): AudienceInsights!
+    
+    # System Health
+    systemHealth: SystemHealth!
+    serviceMetrics: [ServiceMetric!]!
+}
+
+# Root Mutation Type
+type Mutation {
+    # Streamer Management
+    createStreamer(input: CreateStreamerInput!): CreateStreamerResult!
+    updateStreamer(id: ID!, input: UpdateStreamerInput!): UpdateStreamerResult!
+    deleteStreamer(id: ID!): DeleteResult!
+    
+    # Chat Operations
+    createChatRoom(input: CreateChatRoomInput!): CreateChatRoomResult!
+    sendChatMessage(input: SendMessageInput!): SendMessageResult!
+    deleteChatMessage(messageId: ID!, userId: ID!): DeleteResult!
+    
+    # Stream Management
+    startStream(streamerId: ID!, input: StartStreamInput!): StartStreamResult!
+    endStream(streamId: ID!): EndStreamResult!
+    
+    # Analysis Operations
+    triggerVideoAnalysis(streamId: ID!): TriggerAnalysisResult!
+    triggerSentimentAnalysis(roomId: ID!): TriggerAnalysisResult!
+    
+    # File Upload
+    uploadVideo(file: Upload!, streamerId: ID!): UploadResult!
+}
+
+# Root Subscription Type
+type Subscription {
+    # Real-time Chat
+    chatMessages(roomId: ID!): ChatMessage!
+    userActivity(roomId: ID!): UserActivity!
+    
+    # Live Analytics
+    realtimeViewers(streamerId: ID!): ViewerCount!
+    liveSentiment(streamerId: ID!): SentimentUpdate!
+    objectDetections(streamId: ID!): ObjectDetection!
+    sponsorDetections(streamId: ID!): SponsorDetection!
+    
+    # System Events
+    systemAlerts: SystemAlert!
+    serviceStatus(serviceName: String!): ServiceStatus!
+}
+
+# Core Types
+
+type Streamer {
+    id: ID!
+    username: String!
+    displayName: String!
+    email: String!
+    platform: StreamingPlatform!
+    profileImage: String
+    description: String
+    followers: Int!
+    isLive: Boolean!
+    currentStream: Stream
+    streams(pagination: PaginationInput): StreamConnection!
+    chatRooms: [ChatRoom!]!
+    analytics: StreamerAnalytics!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type Stream {
+    id: ID!
+    streamerId: ID!
+    streamer: Streamer!
+    title: String!
+    game: String
+    category: String
+    isLive: Boolean!
+    viewerCount: Int!
+    startedAt: DateTime!
+    endedAt: DateTime
+    duration: Int
+    thumbnailUrl: String
+    videoAnalysis: [VideoAnalysis!]!
+    chatRooms: [ChatRoom!]!
+    metrics: StreamMetrics!
+}
+
+type ChatRoom {
+    id: ID!
+    name: String!
+    streamerId: ID!
+    streamer: Streamer!
+    stream: Stream
+    description: String
+    isActive: Boolean!
+    messageCount: Int!
+    activeUserCount: Int!
+    messages(pagination: PaginationInput): MessageConnection!
+    activeUsers: [User!]!
+    sentimentAnalysis: ChatSentimentAnalysis!
+    createdAt: DateTime!
+}
+
+type ChatMessage {
+    id: ID!
+    roomId: ID!
+    room: ChatRoom!
+    userId: ID!
+    user: User!
+    username: String!
+    content: String!
+    messageType: MessageType!
+    sentiment: SentimentScore
+    emotions: [EmotionScore!]!
+    isEdited: Boolean!
+    editedAt: DateTime
+    timestamp: DateTime!
+}
+
+type User {
+    id: ID!
+    username: String!
+    displayName: String!
+    isBot: Boolean!
+    isModerator: Boolean!
+    isSubscriber: Boolean!
+    badges: [String!]!
+    lastActivity: DateTime!
+}
+
+type VideoAnalysis {
+    id: ID!
+    streamId: ID!
+    stream: Stream!
+    frameHash: String!
+    objects: [ObjectDetection!]!
+    sponsors: [SponsorDetection!]!
+    processingTime: Float!
+    timestamp: DateTime!
+}
+
+type ObjectDetection {
+    id: ID!
+    analysisId: ID!
+    className: String!
+    confidence: Float!
+    boundingBox: BoundingBox!
+    trackingId: String
+    timestamp: DateTime!
+}
+
+type SponsorDetection {
+    id: ID!
+    analysisId: ID!
+    brand: String!
+    confidence: Float!
+    detectionMethod: String!
+    boundingBox: BoundingBox
+    sponsorType: SponsorType!
+    timestamp: DateTime!
+}
+
+type SentimentScore {
+    positive: Float!
+    neutral: Float!
+    negative: Float!
+    compound: Float!
+    label: SentimentLabel!
+    confidence: Float!
+}
+
+type EmotionScore {
+    emotion: EmotionType!
+    score: Float!
+}
+
+# Analytics Types
+
+type StreamingAnalytics {
+    streamerId: ID!
+    timeRange: TimeRange!
+    totalStreams: Int!
+    totalViewTime: Int!
+    averageViewers: Float!
+    peakViewers: Int!
+    chatActivity: ChatAnalytics!
+    sentimentTrends: [SentimentTrend!]!
+    topSponsors: [SponsorAnalytics!]!
+    audienceGrowth: [GrowthMetric!]!
+}
+
+type ChatAnalytics {
+    totalMessages: Int!
+    averageMessagesPerMinute: Float!
+    uniqueChatters: Int!
+    sentimentDistribution: SentimentDistribution!
+    emotionDistribution: [EmotionDistribution!]!
+    topChatters: [ChatterAnalytics!]!
+}
+
+type SentimentAnalysisResult {
+    streamerId: ID!
+    timeRange: TimeRange!
+    overallSentiment: SentimentScore!
+    sentimentTrends: [SentimentTrend!]!
+    emotionTrends: [EmotionTrend!]!
+    messageVolume: [MessageVolumePoint!]!
+}
+
+type RealtimeMetrics {
+    streamerId: ID!
+    isLive: Boolean!
+    currentViewers: Int!
+    chatMessagesPerMinute: Float!
+    currentSentiment: SentimentScore!
+    dominantEmotion: EmotionType!
+    activeSponsorDetections: [SponsorDetection!]!
+    lastUpdated: DateTime!
+}
+
+type AudienceInsights {
+    streamerId: ID!
+    timeRange: TimeRange!
+    viewerRetention: [RetentionPoint!]!
+    audienceGrowth: [GrowthPoint!]!
+    chatEngagement: [EngagementPoint!]!
+    topKeywords: [KeywordInsight!]!
+    demographicBreakdown: DemographicData!
+}
+
+# System Types
+
+type SystemHealth {
+    status: HealthStatus!
+    services: [ServiceHealth!]!
+    lastChecked: DateTime!
+}
+
+type ServiceHealth {
+    name: String!
+    status: HealthStatus!
+    responseTime: Float!
+    uptime: Float!
+    version: String!
+    metrics: JSON
+}
+
+# Input Types
+
+input StreamerFilter {
+    platform: StreamingPlatform
+    isLive: Boolean
+    category: String
+    minFollowers: Int
+    maxFollowers: Int
+}
+
+input ChatRoomFilter {
+    isActive: Boolean
+    minMessageCount: Int
+    hasActiveUsers: Boolean
+}
+
+input TimeRangeInput {
+    startDate: DateTime!
+    endDate: DateTime!
+}
+
+input PaginationInput {
+    first: Int = 20
+    after: String
+    last: Int
+    before: String
+}
+
+input CreateStreamerInput {
+    username: String!
+    displayName: String!
+    email: String!
+    platform: StreamingPlatform!
+    description: String
+}
+
+input UpdateStreamerInput {
+    displayName: String
+    description: String
+    profileImage: String
+}
+
+input CreateChatRoomInput {
+    name: String!
+    streamerId: ID!
+    description: String
+}
+
+input SendMessageInput {
+    roomId: ID!
+    userId: ID!
+    username: String!
+    content: String!
+    messageType: MessageType = CHAT
+}
+
+input StartStreamInput {
+    title: String!
+    game: String
+    category: String
+}
+
+# Connection Types (Relay Pagination)
+
+type StreamerConnection {
+    edges: [StreamerEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type StreamerEdge {
+    node: Streamer!
+    cursor: String!
+}
+
+type StreamConnection {
+    edges: [StreamEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type StreamEdge {
+    node: Stream!
+    cursor: String!
+}
+
+type MessageConnection {
+    edges: [MessageEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type MessageEdge {
+    node: ChatMessage!
+    cursor: String!
+}
+
+type PageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
+}
+
+# Utility Types
+
+type BoundingBox {
+    x: Float!
+    y: Float!
+    width: Float!
+    height: Float!
+}
+
+type TimeRange {
+    startDate: DateTime!
+    endDate: DateTime!
+}
+
+# Result Types
+
+type CreateStreamerResult {
+    success: Boolean!
+    streamer: Streamer
+    errors: [Error!]!
+}
+
+type UpdateStreamerResult {
+    success: Boolean!
+    streamer: Streamer
+    errors: [Error!]!
+}
+
+type CreateChatRoomResult {
+    success: Boolean!
+    chatRoom: ChatRoom
+    errors: [Error!]!
+}
+
+type SendMessageResult {
+    success: Boolean!
+    message: ChatMessage
+    errors: [Error!]!
+}
+
+type DeleteResult {
+    success: Boolean!
+    errors: [Error!]!
+}
+
+type StartStreamResult {
+    success: Boolean!
+    stream: Stream
+    errors: [Error!]!
+}
+
+type EndStreamResult {
+    success: Boolean!
+    stream: Stream
+    errors: [Error!]!
+}
+
+type TriggerAnalysisResult {
+    success: Boolean!
+    jobId: String
+    errors: [Error!]!
+}
+
+type UploadResult {
+    success: Boolean!
+    fileUrl: String
+    errors: [Error!]!
+}
+
+type Error {
+    message: String!
+    code: String!
+    field: String
+}
+
+# Enums
+
+enum StreamingPlatform {
+    TWITCH
+    YOUTUBE
+    FACEBOOK
+    TIKTOK
+    OTHER
+}
+
+enum MessageType {
+    CHAT
+    SYSTEM
+    MODERATION
+    ANNOUNCEMENT
+    DONATION
+    SUBSCRIPTION
+}
+
+enum SentimentLabel {
+    POSITIVE
+    NEUTRAL
+    NEGATIVE
+}
+
+enum EmotionType {
+    JOY
+    SADNESS
+    ANGER
+    FEAR
+    SURPRISE
+    DISGUST
+    ANTICIPATION
+    TRUST
+}
+
+enum SponsorType {
+    BRAND_LOGO
+    PRODUCT_PLACEMENT
+    OVERLAY
+    MERCHANDISE
+    ADVERTISEMENT
+}
+
+enum HealthStatus {
+    HEALTHY
+    DEGRADED
+    UNHEALTHY
+    UNKNOWN
+}
+
+# Additional Analytics Types
+
+type SentimentTrend {
+    timestamp: DateTime!
+    sentiment: SentimentScore!
+    messageCount: Int!
+}
+
+type EmotionTrend {
+    timestamp: DateTime!
+    emotion: EmotionType!
+    score: Float!
+    messageCount: Int!
+}
+
+type MessageVolumePoint {
+    timestamp: DateTime!
+    count: Int!
+}
+
+type SentimentDistribution {
+    positive: Float!
+    neutral: Float!
+    negative: Float!
+}
+
+type EmotionDistribution {
+    emotion: EmotionType!
+    percentage: Float!
+}
+
+type ChatterAnalytics {
+    userId: ID!
+    username: String!
+    messageCount: Int!
+    averageSentiment: Float!
+    isActive: Boolean!
+}
+
+type SponsorAnalytics {
+    brand: String!
+    detectionCount: Int!
+    averageConfidence: Float!
+    totalExposureTime: Int!
+    detectionMethods: [String!]!
+}
+
+type GrowthMetric {
+    timestamp: DateTime!
+    value: Float!
+    change: Float!
+}
+
+type RetentionPoint {
+    timestamp: DateTime!
+    retentionRate: Float!
+    viewerCount: Int!
+}
+
+type GrowthPoint {
+    timestamp: DateTime!
+    followers: Int!
+    growth: Float!
+}
+
+type EngagementPoint {
+    timestamp: DateTime!
+    messagesPerMinute: Float!
+    uniqueChatters: Int!
+}
+
+type KeywordInsight {
+    keyword: String!
+    frequency: Int!
+    sentiment: Float!
+}
+
+type DemographicData {
+    ageGroups: [AgeGroupData!]!
+    regions: [RegionData!]!
+    languages: [LanguageData!]!
+}
+
+type AgeGroupData {
+    ageRange: String!
+    percentage: Float!
+    count: Int!
+}
+
+type RegionData {
+    region: String!
+    percentage: Float!
+    count: Int!
+}
+
+type LanguageData {
+    language: String!
+    percentage: Float!
+    count: Int!
+}
+
+type StreamerAnalytics {
+    totalStreams: Int!
+    totalStreamTime: Int!
+    averageViewers: Float!
+    peakViewers: Int!
+    followerGrowth: [GrowthPoint!]!
+    topGames: [GameAnalytics!]!
+}
+
+type GameAnalytics {
+    game: String!
+    streamCount: Int!
+    totalViewTime: Int!
+    averageViewers: Float!
+}
+
+type StreamMetrics {
+    averageViewers: Float!
+    peakViewers: Int!
+    chatMessages: Int!
+    uniqueChatters: Int!
+    averageSentiment: Float!
+    sponsorDetections: Int!
+}
+
+type ChatSentimentAnalysis {
+    overallSentiment: SentimentScore!
+    messageCount: Int!
+    sentimentTrends: [SentimentTrend!]!
+    emotionBreakdown: [EmotionDistribution!]!
+}
+
+type ViewerCount {
+    streamerId: ID!
+    count: Int!
+    timestamp: DateTime!
+}
+
+type SentimentUpdate {
+    streamerId: ID!
+    sentiment: SentimentScore!
+    timestamp: DateTime!
+}
+
+type UserActivity {
+    roomId: ID!
+    userId: ID!
+    username: String!
+    activity: String!
+    timestamp: DateTime!
+}
+
+type SystemAlert {
+    severity: AlertSeverity!
+    service: String!
+    message: String!
+    timestamp: DateTime!
+}
+
+type ServiceStatus {
+    serviceName: String!
+    status: HealthStatus!
+    timestamp: DateTime!
+}
+
+type ServiceMetric {
+    serviceName: String!
+    metricName: String!
+    value: Float!
+    unit: String!
+    timestamp: DateTime!
+}
+
+enum AlertSeverity {
+    INFO
+    WARNING
+    ERROR
+    CRITICAL
+}

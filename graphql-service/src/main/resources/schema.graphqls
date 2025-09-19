@@ -1,0 +1,293 @@
+# GraphQL Schema for StreamSense Analytics Platform
+# Comprehensive schema for real-time streaming analytics
+
+schema {
+    query: Query
+    subscription: Subscription
+}
+
+type Query {
+    # Stream queries
+    getAllStreams: [Stream!]!
+    getStream(streamId: String!): Stream
+    getTrendingStreams(limit: Int = 20, category: String): [Stream!]!
+    searchStreams(query: String!, limit: Int = 20, category: String): [Stream!]!
+    
+    # Chat queries
+    getChatMessages(streamId: String!, limit: Int = 50, before: String, after: String): [ChatMessage!]!
+    
+    # Analytics queries
+    getSentimentAnalysis(streamId: String!, timeframe: String = "1h"): SentimentAnalysis
+    getVideoAnalysis(streamId: String!, timeframe: String = "1h"): VideoAnalysis
+    getAnalyticsDashboard(streamId: String!): AnalyticsDashboard
+    getBrandDetections(streamId: String!, timeframe: String = "1h"): [BrandDetection!]!
+    
+    # User queries
+    getUserActivity(userId: String!, timeframe: String = "24h"): UserActivity
+    getRecommendations(userId: String!, limit: Int = 10): [Recommendation!]!
+    
+    # System queries
+    getStreamHealth(streamId: String!): StreamHealth
+}
+
+type Subscription {
+    # Real-time chat
+    chatMessageAdded(streamId: String!): ChatMessage!
+    
+    # Real-time analytics
+    sentimentUpdated(streamId: String!): SentimentUpdate!
+    videoAnalysisUpdated(streamId: String!): VideoAnalysisUpdate!
+    brandDetected(streamId: String!): BrandDetection!
+    analyticsUpdated(streamId: String!): AnalyticsDashboard!
+    
+    # Stream status
+    streamStatusChanged(streamId: String!): StreamStatusUpdate!
+    viewerCountUpdated(streamId: String!): ViewerCountUpdate!
+    
+    # User subscriptions
+    recommendationsUpdated(userId: String!): [Recommendation!]!
+    
+    # Trending data
+    trendingStreamsUpdated(category: String): [Stream!]!
+    
+    # System alerts
+    systemAlertReceived: SystemAlert!
+}
+
+# Core Types
+
+type Stream {
+    id: String!
+    title: String!
+    streamerName: String!
+    category: String!
+    viewerCount: Int!
+    isLive: Boolean!
+    startTime: String!
+    endTime: String
+    quality: String!
+    bitrate: Int!
+    fps: Int!
+    description: String
+    tags: [String!]!
+    language: String
+    thumbnailUrl: String
+    streamUrl: String
+}
+
+type ChatMessage {
+    id: String!
+    userId: String!
+    username: String!
+    content: String!
+    messageType: String!
+    timestamp: String!
+    edited: Boolean!
+    editedAt: String
+    sentimentScore: Float
+    emotion: String
+    flagged: Boolean!
+    moderationReason: String
+}
+
+type SentimentAnalysis {
+    streamId: String!
+    overallSentiment: SentimentScore!
+    emotionBreakdown: EmotionBreakdown!
+    messageCount: Int!
+    timeframe: String!
+    lastUpdated: String!
+    trendData: [SentimentTrend!]!
+}
+
+type SentimentScore {
+    sentiment: String!  # positive, negative, neutral
+    score: Float!       # -1.0 to 1.0
+    confidence: Float!  # 0.0 to 1.0
+}
+
+type EmotionBreakdown {
+    joy: Float!
+    anger: Float!
+    sadness: Float!
+    fear: Float!
+    surprise: Float!
+    disgust: Float!
+    neutral: Float!
+}
+
+type SentimentTrend {
+    timestamp: String!
+    sentiment: String!
+    score: Float!
+    messageCount: Int!
+}
+
+type VideoAnalysis {
+    streamId: String!
+    objectsDetected: [String!]!
+    brandDetections: [BrandDetection!]!
+    frameCount: Int!
+    timeframe: String!
+    lastUpdated: String!
+    qualityMetrics: QualityMetrics!
+}
+
+type BrandDetection {
+    id: String!
+    brand: String!
+    confidence: Float!
+    timestamp: String!
+    region: String!
+    duration: Int
+    category: String
+}
+
+type QualityMetrics {
+    averageBitrate: Int!
+    frameDrops: Int!
+    bufferingEvents: Int!
+    qualityScore: Float!
+}
+
+type AnalyticsDashboard {
+    streamId: String!
+    viewerCount: Int!
+    messageRate: Float!       # messages per minute
+    sentimentScore: Float!
+    brandMentions: Int!
+    engagement: Float!        # percentage
+    trending: Boolean!
+    lastUpdated: String!
+    realtimeMetrics: RealtimeMetrics!
+}
+
+type RealtimeMetrics {
+    chatActivity: ChatActivity!
+    viewerActivity: ViewerActivity!
+    contentMetrics: ContentMetrics!
+}
+
+type ChatActivity {
+    messagesPerMinute: Float!
+    activeUsers: Int!
+    moderationActions: Int!
+    averageMessageLength: Float!
+}
+
+type ViewerActivity {
+    joinRate: Float!
+    leaveRate: Float!
+    averageWatchTime: Float!
+    peakViewers: Int!
+}
+
+type ContentMetrics {
+    videoQuality: Float!
+    audioQuality: Float!
+    streamStability: Float!
+    interactionRate: Float!
+}
+
+type UserActivity {
+    userId: String!
+    totalWatchTime: Int!      # minutes
+    streamsWatched: Int!
+    messagesPosted: Int!
+    favoriteCategories: [String!]!
+    activityPeriod: String!
+    lastActive: String!
+    preferences: UserPreferences!
+}
+
+type UserPreferences {
+    categories: [String!]!
+    languages: [String!]!
+    qualityPreference: String!
+    notificationsEnabled: Boolean!
+}
+
+type Recommendation {
+    id: String!
+    streamId: String!
+    title: String!
+    reason: String!
+    confidence: Float!
+    category: String!
+    expectedViewTime: Int
+    personalizedScore: Float!
+}
+
+type StreamHealth {
+    streamId: String!
+    isHealthy: Boolean!
+    bitrate: Int!
+    fps: Int!
+    quality: String!
+    latency: Int!            # milliseconds
+    dropRate: Float!         # percentage
+    lastCheck: String!
+    issues: [HealthIssue!]!
+}
+
+type HealthIssue {
+    type: String!            # BITRATE_LOW, FPS_DROP, DISCONNECTION
+    severity: String!        # LOW, MEDIUM, HIGH, CRITICAL
+    description: String!
+    timestamp: String!
+    resolved: Boolean!
+}
+
+# Real-time Update Types
+
+type SentimentUpdate {
+    streamId: String!
+    sentiment: String!
+    score: Float!
+    confidence: Float!
+    timestamp: String!
+    messageId: String
+}
+
+type VideoAnalysisUpdate {
+    streamId: String!
+    objectsDetected: [String!]!
+    brandDetected: String
+    confidence: Float!
+    timestamp: String!
+    frameNumber: Int!
+}
+
+type StreamStatusUpdate {
+    streamId: String!
+    isLive: Boolean!
+    viewerCount: Int!
+    timestamp: String!
+    statusChange: String     # STARTED, ENDED, RECONNECTED, TECHNICAL_DIFFICULTY
+}
+
+type ViewerCountUpdate {
+    streamId: String!
+    viewerCount: Int!
+    timestamp: String!
+    trend: String!           # INCREASING, DECREASING, STABLE
+}
+
+type SystemAlert {
+    id: String!
+    type: String!            # INFO, WARNING, ERROR, CRITICAL
+    message: String!
+    streamId: String
+    userId: String
+    timestamp: String!
+    acknowledged: Boolean!
+    details: AlertDetails
+}
+
+type AlertDetails {
+    component: String!       # CHAT_SERVICE, VIDEO_SERVICE, ML_ENGINE, etc.
+    errorCode: String
+    stackTrace: String
+    affectedUsers: Int
+    estimatedResolution: String
+}

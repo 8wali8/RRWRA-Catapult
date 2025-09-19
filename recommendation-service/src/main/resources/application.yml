@@ -1,0 +1,95 @@
+# Netflix OSS Recommendation Service Configuration
+server:
+  port: 8084
+
+spring:
+  application:
+    name: recommendation-service
+  profiles:
+    active: docker
+  datasource:
+    url: jdbc:postgresql://postgres:5432/streaming_analytics
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  redis:
+    host: redis
+    port: 6379
+  data:
+    cassandra:
+      contact-points: cassandra
+      port: 9042
+      keyspace-name: streaming_analytics
+      local-datacenter: datacenter1
+  kafka:
+    bootstrap-servers: kafka:29092
+    consumer:
+      group-id: recommendation-service
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+# Eureka Configuration
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      default-zone: http://eureka-server:8761/eureka/
+  instance:
+    hostname: recommendation-service
+    prefer-ip-address: true
+
+# Hystrix Configuration
+hystrix:
+  command:
+    default:
+      execution:
+        timeout:
+          enabled: true
+        isolation:
+          thread:
+            timeout-in-milliseconds: 5000
+      circuit-breaker:
+        enabled: true
+        request-volume-threshold: 10
+        failure-threshold: 50
+
+# Zipkin Configuration
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Logging Configuration
+logging:
+  level:
+    com.streamsense.recommendation: DEBUG
+    org.springframework.cloud: INFO
+    org.springframework.kafka: INFO
+    root: INFO

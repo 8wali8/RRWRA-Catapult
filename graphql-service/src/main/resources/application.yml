@@ -1,0 +1,108 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: graphql-service
+  
+  # GraphQL Configuration
+  graphql:
+    schema:
+      locations: classpath:schema.graphqls
+    websocket:
+      path: /graphql
+    web:
+      path: /graphql
+    
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/streamsense
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  # Redis Configuration for Caching
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: graphql-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+# Eureka Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+
+# Management and Monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,graphql-schema
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# GraphQL Specific Configuration
+graphql:
+  servlet:
+    mapping: /graphql
+    enabled: true
+    cors-enabled: true
+  tools:
+    schema-location-pattern: "**/*.graphqls"
+  
+# Application Specific Configuration
+app:
+  graphql:
+    subscription:
+      websocket:
+        enabled: true
+        path: /subscriptions
+    playground:
+      enabled: true
+      endpoint: /playground
+    
+# Logging Configuration
+logging:
+  level:
+    com.streaming.analytics.graphql: DEBUG
+    org.springframework.kafka: INFO
+    graphql: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/graphql-service.log

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eureka-server
+  namespace: streamsense
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eureka-server
+  template:
+    metadata:
+      labels:
+        app: eureka-server
+    spec:
+      containers:
+      - name: eureka-server
+        image: streamsense/eureka-server:latest
+        ports:
+        - containerPort: 8761
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "kubernetes"
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eureka-server
+  namespace: streamsense
+spec:
+  selector:
+    app: eureka-server
+  ports:
+  - port: 8761
+    targetPort: 8761
+  type: ClusterIP

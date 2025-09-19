@@ -1,0 +1,61 @@
+# Netflix OSS Config Server Configuration
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native,git
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/8wali8/streamsense-config
+          clone-on-start: true
+          force-pull: true
+        native:
+          search-locations: file:///config-repo
+        encrypt:
+          enabled: true
+        vault:
+          enabled: false
+  security:
+    user:
+      name: config
+      password: server123
+
+# Eureka Configuration
+eureka:
+  client:
+    registerWithEureka: true
+    fetchRegistry: true
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    hostname: config-server
+    prefer-ip-address: true
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,refresh,beans,env,configprops
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Logging Configuration
+logging:
+  level:
+    org.springframework.cloud.config: DEBUG
+    org.springframework.security: DEBUG
+    root: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

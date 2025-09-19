@@ -1,0 +1,379 @@
+# Kubernetes namespace for the entire platform
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: streaming-analytics
+  labels:
+    name: streaming-analytics
+    environment: production
+
+---
+# PostgreSQL StatefulSet and Service
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: streaming-analytics
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15.4-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: streaming_analytics
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: init-sql
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: init-sql
+        configMap:
+          name: postgres-init
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: streaming-analytics
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+---
+# Redis Deployment and Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: streaming-analytics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7.2-alpine
+        ports:
+        - containerPort: 6379
+        command: ["redis-server", "--appendonly", "yes"]
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: streaming-analytics
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+  type: ClusterIP
+
+---
+# Kafka StatefulSet and Service
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: streaming-analytics
+spec:
+  serviceName: kafka
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: kafka
+        image: confluentinc/cp-kafka:7.4.0
+        ports:
+        - containerPort: 9092
+        env:
+        - name: KAFKA_BROKER_ID
+          value: "1"
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: "zookeeper:2181"
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: "PLAINTEXT://kafka:9092"
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "1"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: streaming-analytics
+spec:
+  selector:
+    app: kafka
+  ports:
+  - port: 9092
+    targetPort: 9092
+  type: ClusterIP
+
+---
+# Eureka Server Deployment and Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eureka-server
+  namespace: streaming-analytics
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: eureka-server
+  template:
+    metadata:
+      labels:
+        app: eureka-server
+    spec:
+      containers:
+      - name: eureka-server
+        image: streaming-analytics/eureka-server:latest
+        ports:
+        - containerPort: 8761
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "kubernetes"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eureka-server
+  namespace: streaming-analytics
+spec:
+  selector:
+    app: eureka-server
+  ports:
+  - port: 8761
+    targetPort: 8761
+  type: ClusterIP
+
+---
+# API Gateway Deployment and Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: streaming-analytics
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: streaming-analytics/api-gateway:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "kubernetes"
+        - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+          value: "http://eureka-server:8761/eureka"
+        - name: SPRING_REDIS_HOST
+          value: "redis"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: streaming-analytics
+spec:
+  selector:
+    app: api-gateway
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: LoadBalancer
+
+---
+# ML Engine Deployment and Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-engine
+  namespace: streaming-analytics
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ml-engine
+  template:
+    metadata:
+      labels:
+        app: ml-engine
+    spec:
+      containers:
+      - name: ml-engine
+        image: streaming-analytics/ml-engine:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: url
+        - name: REDIS_HOST
+          value: "redis"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka:9092"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+            nvidia.com/gpu: 1
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+            nvidia.com/gpu: 1
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 120
+          periodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-engine
+  namespace: streaming-analytics
+spec:
+  selector:
+    app: ml-engine
+  ports:
+  - port: 5000
+    targetPort: 5000
+  type: ClusterIP
+
+---
+# Secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+  namespace: streaming-analytics
+type: Opaque
+data:
+  username: cG9zdGdyZXM=  # postgres
+  password: cGFzc3dvcmQ=  # password
+  url: cG9zdGdyZXNxbDovL3Bvc3RncmVzOnBhc3N3b3JkQHBvc3RncmVzOjU0MzIvc3RyZWFtaW5nX2FuYWx5dGljcw==
+
+---
+# ConfigMap for database initialization
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: streaming-analytics
+data:
+  init.sql: |
+    -- Database initialization script will be mounted here
+    -- (Content from db/init.sql would go here in production)

@@ -1,0 +1,125 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: chat-service
+  
+  # WebFlux Configuration (Reactive)
+  webflux:
+    base-path: /api/chat
+  
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/streamsense
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  # Redis Configuration for Real-time Chat
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+    
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: chat-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+
+# Eureka Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+
+# Resilience4j Configuration for Circuit Breakers
+resilience4j:
+  circuitbreaker:
+    instances:
+      chat-service:
+        register-health-indicator: true
+        sliding-window-size: 100
+        permitted-number-of-calls-in-half-open-state: 10
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 60s
+        failure-rate-threshold: 50
+        event-consumer-buffer-size: 10
+  
+  ratelimiter:
+    instances:
+      room-creation:
+        limit-for-period: 5
+        limit-refresh-period: 60s
+        timeout-duration: 3s
+      activity-updates:
+        limit-for-period: 100
+        limit-refresh-period: 60s
+        timeout-duration: 1s
+
+# Management and Monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Chat Service Specific Configuration
+chat:
+  rate-limiting:
+    max-messages-per-minute: 30
+    max-messages-per-hour: 500
+    cooldown-seconds: 2
+  rooms:
+    max-users-per-room: 1000
+    message-history-limit: 1000
+    auto-moderation: true
+  websocket:
+    max-connections: 10000
+    heartbeat-interval: 30s
+
+# Logging Configuration
+logging:
+  level:
+    com.streaming.analytics.chat: DEBUG
+    org.springframework.kafka: INFO
+    org.springframework.data.redis: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/chat-service.log

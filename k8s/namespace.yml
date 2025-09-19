@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: streamsense
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-config
+  namespace: streamsense
+data:
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  KAFKA_TOPICS_CHAT: "stream.chat.messages"
+  KAFKA_TOPICS_VIDEO: "stream.video.frames"
+  KAFKA_TOPICS_SENTIMENT: "stream.sentiment.events"
+  KAFKA_TOPICS_SPONSOR: "stream.sponsor.detections"

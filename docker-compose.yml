@@ -1,0 +1,332 @@
+# Enterprise Streaming Analytics Platform - Production Docker Compose
+# Complete microservices orchestration with monitoring, logging, and development tools
+
+version: '3.8'
+
+networks:
+  streaming-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  zookeeper_data:
+  prometheus_data:
+  grafana_data:
+  cassandra_data:
+
+services:
+  # === INFRASTRUCTURE SERVICES ===
+  
+  postgres:
+    image: postgres:15.4-alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: streaming_analytics
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - streaming-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - streaming-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+    networks:
+      - streaming-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - streaming-network
+
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=StreamingCluster
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_NUM_TOKENS=128
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+      - ./cassandra/init.cql:/docker-entrypoint-initdb.d/init.cql
+    networks:
+      - streaming-network
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "describe keyspaces"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # === MICROSERVICES ===
+  
+  config-server:
+    build: ./config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - streaming-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    depends_on:
+      - config-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+    networks:
+      - streaming-network
+
+  # === MICROSERVICES ===
+  
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+      - redis
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_REDIS_HOST=redis
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
+    networks:
+      - streaming-network
+
+  chat-service:
+    build: ./chat-service
+    container_name: chat-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+      - postgres
+      - redis
+      - kafka
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/streaming_analytics
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_REDIS_HOST=redis
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
+    networks:
+      - streaming-network
+
+  graphql-service:
+    build: ./graphql-service
+    container_name: graphql-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-server
+      - postgres
+      - redis
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/streaming_analytics
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_REDIS_HOST=redis
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
+    networks:
+      - streaming-network
+
+  sentiment-service:
+    build: ./sentiment-service
+    container_name: sentiment-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-server
+      - postgres
+      - redis
+      - cassandra
+      - kafka
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/streaming_analytics
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_REDIS_HOST=redis
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_DATA_CASSANDRA_CONTACT_POINTS=cassandra
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
+    networks:
+      - streaming-network
+
+  recommendation-service:
+    build: ./recommendation-service
+    container_name: recommendation-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - eureka-server
+      - postgres
+      - redis
+      - cassandra
+      - kafka
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/streaming_analytics
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_REDIS_HOST=redis
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_DATA_CASSANDRA_CONTACT_POINTS=cassandra
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411
+    networks:
+      - streaming-network
+
+  ml-engine:
+    build: ./ml-engine
+    container_name: ml-engine
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/streaming_analytics
+      - REDIS_HOST=redis
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - PYTHONUNBUFFERED=1
+    networks:
+      - streaming-network
+
+  video-service:
+    build: ./video-service
+    container_name: video-service
+    ports:
+      - "5001:5001"
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/streaming_analytics
+      - REDIS_HOST=redis
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - PYTHONUNBUFFERED=1
+    networks:
+      - streaming-network
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+      - graphql-service
+    environment:
+      - REACT_APP_API_GATEWAY_URL=http://localhost:8080
+      - REACT_APP_GRAPHQL_URL=http://localhost:8082/graphql
+    networks:
+      - streaming-network
+
+  # === MONITORING & OBSERVABILITY ===
+  
+  zipkin:
+    image: openzipkin/zipkin:2.24
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - streaming-network
+
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+    networks:
+      - streaming-network
+
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - streaming-network

@@ -1,0 +1,40 @@
+# ML Engine Dependencies - Enterprise Grade
+flask==3.0.0
+flask-cors==4.0.0
+torch==2.1.0
+torchvision==0.16.0
+transformers==4.35.0
+ultralytics==8.0.196
+opencv-python==4.8.1.78
+numpy==1.24.3
+pandas==2.0.3
+scikit-learn==1.3.0
+Pillow==10.0.1
+
+# Database & Cache
+redis==5.0.1
+psycopg2-binary==2.9.7
+SQLAlchemy==2.0.21
+
+# Message Queue
+kafka-python==2.0.2
+
+# Monitoring & Metrics
+prometheus-client==0.17.1
+
+# Background Tasks
+schedule==1.2.0
+APScheduler==3.10.4
+
+# Performance & Async
+asyncio-mqtt==0.13.0
+uvloop==0.17.0
+
+# Development & Testing
+pytest==7.4.2
+pytest-asyncio==0.21.1
+black==23.7.0
+flake8==6.0.0
+
+# Security
+cryptography==41.0.4

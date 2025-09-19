@@ -1,9 +1,59 @@
-# Node.js dependencies
+# Project specific
+sponsor_data.json
+twitch_tokens.txt
+*.h5
+*.pt
+*.pth
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Maven
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.properties
+
+# Gradle
+.gradle
+**/build/
+!src/**/build/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Node.js
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
+lerna-debug.log*
+.npm
+.yarn-integrity
+dist/
+build/
 
 # Python
 __pycache__/
@@ -23,89 +73,82 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.nox/
+.coverage
+.pytest_cache/
+cover/
+*.cover
+*.py,cover
+.hypothesis/
 
 # Virtual environments
-venv/
-env/
-ENV/
-.venv/
 .env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Logs
-logs/
-*.log
+# Jupyter Notebook
+.ipynb_checkpoints
 
 # Docker
 .dockerignore
 
-# Temporary files
-tmp/
-temp/
-*.tmp
-*.bak
+# Logs
+*.log
+logs/
 
-# Model files (too large for git)
-*.pt
-*.pth
-*.h5
-*.pkl
-*.joblib
-
-# Data files
-*.csv
-stream_data/
-Captures/
-
-# Build outputs
-target/
-*.jar
-*.war
-*.ear
-
-# Package files
-*.tgz
-*.tar.gz
-*.zip
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
 
-# Kubernetes secrets
-k8s/secrets/
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
 
-# Monitoring data
-grafana-data/
+# Backup files
+*.bak
+*.backup
+
+# Cache directories
+.cache/
+.npm/
+.eslintcache
+
+# Environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Spring Boot
+!**/src/main/**
+!**/src/test/**
+
+# Kubernetes
+*.kubeconfig
+
+# Monitoring and metrics
 prometheus-data/
-elasticsearch-data/
-
-# Keep essential config files
-sponsor_data.json
+grafana-data/
