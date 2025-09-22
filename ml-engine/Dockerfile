@@ -11,11 +11,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Install system dependencies
+# Install system dependencies for OpenCV and ML processing
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     libpq-dev \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
