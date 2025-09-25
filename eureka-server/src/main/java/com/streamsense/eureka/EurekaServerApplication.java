@@ -10,8 +10,8 @@ public class EurekaServerApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(EurekaServerApplication.class, args);
-        System.out.println("🔍 StreamSense Eureka Service Discovery Started!");
-        System.out.println("📊 Dashboard: http://localhost:8761");
-        System.out.println("🔧 Health: http://localhost:8761/actuator/health");
+        System.out.println("StreamSense Eureka Service Discovery Started!");
+        System.out.println("Dashboard: http://localhost:8761");
+        System.out.println("Health: http://localhost:8761/actuator/health");
     }
 }

@@ -67,7 +67,7 @@ class StreamSenseLoadTester:
     
     async def run_load_test(self, target_rps=10000, duration_seconds=60):
         """Run load test targeting 10K+ requests per second"""
-        print(f"🚀 Starting load test: {target_rps} RPS for {duration_seconds} seconds")
+        print(f"Starting load test: {target_rps} RPS for {duration_seconds} seconds")
         
         connector = aiohttp.TCPConnector(limit=1000)
         async with aiohttp.ClientSession(connector=connector) as session:
@@ -141,21 +141,21 @@ async def main():
     
     # Print results
     print(f"""
-📊 PERFORMANCE TEST RESULTS:
+PERFORMANCE TEST RESULTS:
 {'='*50}
-🔥 Events/Second: {results['events_per_second']} (Target: 10,000+)
-⚡ P95 Latency: {results['p95_latency_ms']}ms (Target: <200ms)
-📈 P99 Latency: {results['p99_latency_ms']}ms
-🎯 Average Latency: {results['avg_response_time_ms']}ms
-📋 Total Requests: {results['total_requests']:,}
-❌ Errors: {results['errors']} ({results['error_rate']}%)
+Events/Second: {results['events_per_second']} (Target: 10,000+)
+P95 Latency: {results['p95_latency_ms']}ms (Target: <200ms)
+P99 Latency: {results['p99_latency_ms']}ms
+Average Latency: {results['avg_response_time_ms']}ms
+Total Requests: {results['total_requests']:,}
+Errors: {results['errors']} ({results['error_rate']}%)
 
-✅ REQUIREMENTS VALIDATION:
+REQUIREMENTS VALIDATION:
 {'='*30}
-10K+ Events/Sec: {'✅ PASS' if results['meets_10k_rps'] else '❌ FAIL'}
-<200ms P95 Latency: {'✅ PASS' if results['meets_p95_latency'] else '❌ FAIL'}
+10K+ Events/Sec: {'PASS' if results['meets_10k_rps'] else 'FAIL'}
+<200ms P95 Latency: {'PASS' if results['meets_p95_latency'] else 'FAIL'}
 
-🏆 OVERALL: {'✅ MEETS ALL REQUIREMENTS' if results['meets_requirements'] else '❌ NEEDS OPTIMIZATION'}
+OVERALL: {'MEETS ALL REQUIREMENTS' if results['meets_requirements'] else 'NEEDS OPTIMIZATION'}
 """)
 
 if __name__ == "__main__":

@@ -32,7 +32,7 @@ public class HystrixConfig {
 
         @Override
         protected String getFallback() {
-            return "🚨 Circuit breaker activated - Service degraded gracefully";
+            return "Circuit breaker activated - Service degraded gracefully";
         }
     }
 }

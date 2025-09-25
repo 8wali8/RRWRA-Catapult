@@ -18,15 +18,15 @@ print_section() {
 }
 
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    echo -e "${GREEN}[SUCCESS] $1${NC}"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠ $1${NC}"
+    echo -e "${YELLOW}[WARNING] $1${NC}"
 }
 
 print_error() {
-    echo -e "${RED}✗ $1${NC}"
+    echo -e "${RED}[ERROR] $1${NC}"
 }
 
 # Banner
@@ -119,17 +119,17 @@ done
 # Display access information
 print_section "Access Information"
 echo -e "${GREEN}"
-echo "🌐 Application URLs:"
+echo "Application URLs:"
 echo "   Frontend:          http://localhost:3000"
 echo "   API Gateway:       http://localhost:8080"
 echo "   Eureka Dashboard:  http://localhost:8761"
 echo "   GraphQL Playground: http://localhost:8082/graphql"
 echo ""
-echo "📊 Monitoring:"
+echo "Monitoring:"
 echo "   Prometheus:        http://localhost:9090"
 echo "   Grafana:          http://localhost:3001 (admin/grafana)"
 echo ""
-echo "🗄️ Data Services:"
+echo "Data Services:"
 echo "   PostgreSQL:        localhost:5432"
 echo "   Redis:            localhost:6379"
 echo "   Kafka:            localhost:9092"
@@ -144,7 +144,6 @@ echo "  docker-compose up -d [service-name]    # Start specific service"
 
 print_success "Enterprise Streaming Analytics Platform is ready!"
 
-# Optional: Open browser tabs
 read -p "Open application URLs in browser? (y/n): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then

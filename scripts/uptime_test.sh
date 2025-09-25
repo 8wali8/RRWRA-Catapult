@@ -3,7 +3,7 @@
 # StreamSense Uptime Testing Script
 # Validates 99.99% uptime requirement with chaos engineering
 
-echo "🔧 StreamSense Uptime & Resilience Testing"
+echo "StreamSense Uptime & Resilience Testing"
 echo "=========================================="
 
 # Service endpoints to monitor
@@ -48,7 +48,7 @@ check_service_health() {
 
 # Chaos engineering tests
 run_chaos_tests() {
-    echo "🔥 Running Chaos Engineering Tests..."
+    echo "Running Chaos Engineering Tests..."
     
     # Test 1: Random service restart
     echo "Test 1: Random service restart simulation"
@@ -72,8 +72,8 @@ run_chaos_tests() {
 }
 
 # Main monitoring loop
-echo "🚀 Starting $TEST_DURATION_HOURS hour uptime test..."
-echo "📊 Checking every $CHECK_INTERVAL_SECONDS seconds ($TOTAL_CHECKS total checks)"
+echo "Starting $TEST_DURATION_HOURS hour uptime test..."
+echo "Checking every $CHECK_INTERVAL_SECONDS seconds ($TOTAL_CHECKS total checks)"
 
 start_time=$(date +%s)
 check_count=0
@@ -97,9 +97,9 @@ while [[ $check_count -lt $TOTAL_CHECKS ]]; do
         service_checks[$service]=$((service_checks[$service] + 1))
         
         if check_service_health "$service" "$url"; then
-            echo "✅ [$current_time] $service: HEALTHY"
+            echo "[PASS] [$current_time] $service: HEALTHY"
         else
-            echo "❌ [$current_time] $service: UNHEALTHY"
+            echo "[FAIL] [$current_time] $service: UNHEALTHY"
             service_failures[$service]=$((service_failures[$service] + 1))
             all_healthy=false
             
@@ -113,7 +113,7 @@ while [[ $check_count -lt $TOTAL_CHECKS ]]; do
     # Progress report every hour
     if [[ $((check_count % 720)) -eq 0 ]]; then
         hours_elapsed=$((check_count * CHECK_INTERVAL_SECONDS / 3600))
-        echo "📈 Progress: $hours_elapsed/$TEST_DURATION_HOURS hours completed"
+        echo "Progress: $hours_elapsed/$TEST_DURATION_HOURS hours completed"
     fi
     
     sleep $CHECK_INTERVAL_SECONDS
@@ -124,7 +124,7 @@ kill $chaos_pid 2>/dev/null || true
 
 # Calculate final results
 echo ""
-echo "📊 UPTIME TEST RESULTS"
+echo "UPTIME TEST RESULTS"
 echo "======================"
 
 total_uptime=0
