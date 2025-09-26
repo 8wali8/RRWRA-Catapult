@@ -2,49 +2,102 @@
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
+  external_labels:
+    cluster: 'streamsense'
+    environment: 'development'
 
 rule_files:
-  # - "first_rules.yml"
-  # - "second_rules.yml"
+  - "alert_rules.yml"
 
 scrape_configs:
+  # Prometheus itself
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
 
+  # Spring Boot Microservices with Eureka Service Discovery
+  - job_name: 'eureka-discovery'
+    eureka_sd_configs:
+      - server: http://eureka-server:8761/eureka
+        refresh_interval: 30s
+    relabel_configs:
+      - source_labels: [__meta_eureka_app_name]
+        target_label: job
+      - source_labels: [__meta_eureka_app_instance_metadata_management_port]
+        target_label: __address__
+        regex: (.+)
+        replacement: ${1}
+      - target_label: __metrics_path__
+        replacement: /actuator/prometheus
+
+  # Static configuration fallback for services
   - job_name: 'api-gateway'
     static_configs:
       - targets: ['api-gateway:8080']
     metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
 
   - job_name: 'chat-service'
     static_configs:
       - targets: ['chat-service:8081']
     metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
 
   - job_name: 'graphql-service'
     static_configs:
       - targets: ['graphql-service:8082']
     metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
 
+  - job_name: 'sentiment-service'
+    static_configs:
+      - targets: ['sentiment-service:8083']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
+
+  - job_name: 'recommendation-service'
+    static_configs:
+      - targets: ['recommendation-service:8084']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
+
+  # Python ML Services
   - job_name: 'ml-engine'
     static_configs:
       - targets: ['ml-engine:5000']
     metrics_path: '/metrics'
+    scrape_interval: 5s
 
   - job_name: 'video-service'
     static_configs:
       - targets: ['video-service:5001']
     metrics_path: '/metrics'
+    scrape_interval: 5s
 
-  - job_name: 'postgres'
+  # Infrastructure with Exporters
+  - job_name: 'postgres-exporter'
     static_configs:
-      - targets: ['postgres:5432']
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
 
-  - job_name: 'redis'
+  - job_name: 'redis-exporter'
     static_configs:
-      - targets: ['redis:6379']
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
 
-  - job_name: 'kafka'
+  - job_name: 'kafka-exporter'
     static_configs:
-      - targets: ['kafka:9092']
+      - targets: ['kafka-exporter:9308']
+    scrape_interval: 30s
+
+  # Node Exporter for system metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+
+  # JMX Exporter for Kafka JVM metrics
+  - job_name: 'kafka-jmx'
+    static_configs:
+      - targets: ['kafka:9999']
+    scrape_interval: 30s

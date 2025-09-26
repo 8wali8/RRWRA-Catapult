@@ -1,0 +1,175 @@
+# StreamSense Alerting Rules for Enterprise Monitoring
+groups:
+  - name: service_health
+    rules:
+      # Service Down Alerts
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} on {{ $labels.instance }} is down"
+          description: "{{ $labels.job }} service has been down for more than 1 minute"
+
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on {{ $labels.job }}"
+          description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.job }}"
+
+  - name: performance_alerts
+    rules:
+      # High Response Time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.2
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time on {{ $labels.job }}"
+          description: "95th percentile response time is {{ $value }}s on {{ $labels.job }}"
+
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: process_cpu_usage > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.job }}"
+          description: "CPU usage is {{ $value | humanizePercentage }} on {{ $labels.job }}"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: jvm_memory_used_bytes / jvm_memory_max_bytes > 0.9
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High JVM memory usage on {{ $labels.job }}"
+          description: "JVM memory usage is {{ $value | humanizePercentage }} on {{ $labels.job }}"
+
+  - name: kafka_alerts
+    rules:
+      # Kafka Consumer Lag
+      - alert: KafkaConsumerLag
+        expr: kafka_consumer_lag_sum > 1000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Kafka consumer lag"
+          description: "Consumer lag is {{ $value }} messages on topic {{ $labels.topic }}"
+
+      # Kafka Broker Down
+      - alert: KafkaBrokerDown
+        expr: kafka_brokers < 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kafka broker is down"
+          description: "No Kafka brokers are available"
+
+  - name: database_alerts
+    rules:
+      # PostgreSQL Connection Issues
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database is not responding"
+
+      # High Database Connections
+      - alert: HighDatabaseConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High PostgreSQL connection usage"
+          description: "PostgreSQL connections are at {{ $value | humanizePercentage }} capacity"
+
+      # Redis Down
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache server is not responding"
+
+  - name: hystrix_alerts
+    rules:
+      # Circuit Breaker Open
+      - alert: CircuitBreakerOpen
+        expr: hystrix_circuit_breaker_open == 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Circuit breaker is open for {{ $labels.command_group }}"
+          description: "Hystrix circuit breaker has been open for {{ $labels.command_group }}"
+
+      # High Circuit Breaker Error Rate
+      - alert: HighCircuitBreakerErrorRate
+        expr: hystrix_execution_total{event="failure"} / hystrix_execution_total > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High failure rate for {{ $labels.command_group }}"
+          description: "Circuit breaker failure rate is {{ $value | humanizePercentage }}"
+
+  - name: ml_engine_alerts
+    rules:
+      # ML Model Loading Issues
+      - alert: MLModelLoadFailure
+        expr: increase(ml_model_load_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ML model loading failures"
+          description: "{{ $value }} ML model loading failures in the last 5 minutes"
+
+      # High ML Processing Time
+      - alert: HighMLProcessingTime
+        expr: histogram_quantile(0.95, rate(ml_inference_duration_seconds_bucket[5m])) > 1.0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High ML processing time"
+          description: "95th percentile ML inference time is {{ $value }}s"
+
+  - name: eureka_alerts
+    rules:
+      # Service Registration Issues
+      - alert: ServiceRegistrationDown
+        expr: eureka_server_registry_size < 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low service registration count"
+          description: "Only {{ $value }} services registered with Eureka"
+
+      # Eureka Server Down
+      - alert: EurekaServerDown
+        expr: up{job="eureka-server"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Eureka server is down"
+          description: "Service discovery is unavailable"
