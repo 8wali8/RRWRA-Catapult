@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: streamsense
+  labels:
+    name: streamsense
+    environment: production
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: streamsense-config
+  namespace: streamsense
+data:
+  eureka.default.zone: "http://eureka-server.streamsense.svc.cluster.local:8761/eureka/"
+  kafka.bootstrap.servers: "kafka.streamsense.svc.cluster.local:9092"
+  postgres.host: "postgres.streamsense.svc.cluster.local"
+  redis.host: "redis.streamsense.svc.cluster.local"
+  cassandra.host: "cassandra.streamsense.svc.cluster.local"
+  zipkin.base.url: "http://zipkin.streamsense.svc.cluster.local:9411"
+  prometheus.url: "http://prometheus.streamsense.svc.cluster.local:9090"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: streamsense-secrets
+  namespace: streamsense
+type: Opaque
+data:
+  postgres-password: cGFzc3dvcmQxMjM=  # password123
+  redis-password: cmVkaXNwYXNz          # redispass
+  kafka-password: a2Fma2FwYXNz          # kafkapass

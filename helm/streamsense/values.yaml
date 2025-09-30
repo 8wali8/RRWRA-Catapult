@@ -1,0 +1,384 @@
+# StreamSense Helm Chart Default Values
+# This file contains the default configuration values for the StreamSense platform
+
+# Global configuration
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+  
+# Namespace configuration
+namespace:
+  create: true
+  name: streamsense
+
+# Image configuration
+image:
+  registry: docker.io
+  repository: streamsense
+  tag: "2.0.0"
+  pullPolicy: IfNotPresent
+
+# Infrastructure Services
+infrastructure:
+  eureka:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: streamsense/eureka-server
+      tag: "2.0.0"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "300m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+    service:
+      type: ClusterIP
+      port: 8761
+    
+  configServer:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: streamsense/config-server
+      tag: "2.0.0"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "300m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+    service:
+      type: ClusterIP
+      port: 8888
+
+# API Gateway
+apiGateway:
+  enabled: true
+  replicaCount: 3
+  image:
+    repository: streamsense/api-gateway
+    tag: "2.0.0"
+  resources:
+    requests:
+      memory: "768Mi"
+      cpu: "400m"
+    limits:
+      memory: "1.5Gi"
+      cpu: "800m"
+  service:
+    type: LoadBalancer
+    port: 8080
+    annotations: {}
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    hosts:
+      - host: api.streamsense.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: streamsense-tls
+        hosts:
+          - api.streamsense.local
+
+# Microservices
+microservices:
+  chatService:
+    enabled: true
+    replicaCount: 3
+    image:
+      repository: streamsense/chat-service
+      tag: "2.0.0"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "300m"
+      limits:
+        memory: "1Gi"
+        cpu: "600m"
+    service:
+      type: ClusterIP
+      port: 8081
+    
+  videoService:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: streamsense/video-service
+      tag: "2.0.0"
+    resources:
+      requests:
+        memory: "768Mi"
+        cpu: "400m"
+      limits:
+        memory: "1.5Gi"
+        cpu: "800m"
+    service:
+      type: ClusterIP
+      port: 8082
+      
+  sentimentService:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: streamsense/sentiment-service
+      tag: "2.0.0"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "300m"
+      limits:
+        memory: "1Gi"
+        cpu: "600m"
+    service:
+      type: ClusterIP
+      port: 8083
+      
+  recommendationService:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: streamsense/recommendation-service
+      tag: "2.0.0"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "300m"
+      limits:
+        memory: "1Gi"
+        cpu: "600m"
+    service:
+      type: ClusterIP
+      port: 8084
+      
+  graphqlService:
+    enabled: true
+    replicaCount: 2
+    image:
+      repository: streamsense/graphql-service
+      tag: "2.0.0"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "300m"
+      limits:
+        memory: "1Gi"
+        cpu: "600m"
+    service:
+      type: ClusterIP
+      port: 8086
+
+# ML Engine Services
+mlEngine:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: streamsense/ml-engine
+    tag: "2.0.0"
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  service:
+    type: ClusterIP
+    port: 5000
+
+# Frontend
+frontend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: streamsense/frontend
+    tag: "2.0.0"
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "400m"
+  service:
+    type: ClusterIP
+    port: 3000
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+    hosts:
+      - host: streamsense.local
+        paths:
+          - path: /
+            pathType: Prefix
+
+# Database Dependencies
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "password123"
+    username: "streaming_user"
+    password: "password123"
+    database: "streaming_analytics"
+  architecture: standalone
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "300m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      size: 10Gi
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "200m"
+      limits:
+        memory: "512Mi"
+        cpu: "400m"
+
+kafka:
+  enabled: true
+  replicaCount: 3
+  persistence:
+    enabled: true
+    size: 20Gi
+  zookeeper:
+    enabled: true
+    replicaCount: 3
+    persistence:
+      enabled: true
+      size: 10Gi
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+cassandra:
+  enabled: true
+  replicaCount: 3
+  persistence:
+    enabled: true
+    size: 30Gi
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+# Monitoring Stack
+monitoring:
+  prometheus:
+    enabled: true
+    server:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+      resources:
+        requests:
+          memory: "1Gi"
+          cpu: "500m"
+        limits:
+          memory: "2Gi"
+          cpu: "1000m"
+          
+  grafana:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 5Gi
+    adminPassword: "admin123"
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "200m"
+      limits:
+        memory: "512Mi"
+        cpu: "400m"
+    ingress:
+      enabled: true
+      hosts:
+        - grafana.streamsense.local
+        
+  zipkin:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: openzipkin/zipkin
+      tag: "2.24"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "300m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+    service:
+      type: ClusterIP
+      port: 9411
+
+# Security
+security:
+  podSecurityPolicy:
+    enabled: false
+  networkPolicy:
+    enabled: false
+    
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# RBAC
+rbac:
+  create: true
+
+# Node Selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Horizontal Pod Autoscaler
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80

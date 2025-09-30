@@ -1,0 +1,38 @@
+{{- if .Values.namespace.create }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace.name }}
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+    name: {{ .Values.namespace.name }}
+    environment: production
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "streamsense.fullname" . }}-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+data:
+  eureka.default.zone: "http://{{ include "streamsense.fullname" . }}-eureka.{{ .Values.namespace.name }}.svc.cluster.local:8761/eureka/"
+  kafka.bootstrap.servers: {{ include "streamsense.kafka.bootstrapServers" . | quote }}
+  postgres.host: {{ include "streamsense.postgresql.connectionString" . | quote }}
+  redis.host: {{ include "streamsense.redis.host" . | quote }}
+  zipkin.base.url: "http://{{ include "streamsense.fullname" . }}-zipkin.{{ .Values.namespace.name }}.svc.cluster.local:9411"
+  prometheus.url: "http://{{ include "streamsense.fullname" . }}-prometheus-server.{{ .Values.namespace.name }}.svc.cluster.local:9090"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "streamsense.fullname" . }}-secrets
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+type: Opaque
+data:
+  postgres-password: {{ .Values.postgresql.auth.password | b64enc | quote }}
+  redis-password: {{ .Values.redis.auth.password | default "" | b64enc | quote }}
+  grafana-admin-password: {{ .Values.monitoring.grafana.adminPassword | b64enc | quote }}

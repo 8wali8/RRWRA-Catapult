@@ -1,0 +1,13 @@
+{{- if .Values.infrastructure.eureka.enabled }}
+{{- $service := dict "name" "eureka" "replicaCount" .Values.infrastructure.eureka.replicaCount "image" .Values.infrastructure.eureka.image "resources" .Values.infrastructure.eureka.resources "service" .Values.infrastructure.eureka.service "tier" "infrastructure" }}
+{{- include "streamsense.microservice.deployment" (dict "service" $service "context" .) }}
+---
+{{- include "streamsense.microservice.service" (dict "service" $service "context" .) }}
+{{- end }}
+---
+{{- if .Values.infrastructure.configServer.enabled }}
+{{- $service := dict "name" "config-server" "replicaCount" .Values.infrastructure.configServer.replicaCount "image" .Values.infrastructure.configServer.image "resources" .Values.infrastructure.configServer.resources "service" .Values.infrastructure.configServer.service "tier" "infrastructure" }}
+{{- include "streamsense.microservice.deployment" (dict "service" $service "context" .) }}
+---
+{{- include "streamsense.microservice.service" (dict "service" $service "context" .) }}
+{{- end }}

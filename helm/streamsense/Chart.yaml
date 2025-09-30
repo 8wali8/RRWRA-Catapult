@@ -1,0 +1,48 @@
+apiVersion: v2
+name: streamsense
+description: A comprehensive streaming analytics platform with microservices architecture
+type: application
+version: 2.0.0
+appVersion: "2.0.0"
+home: https://github.com/8wali8/StreamSense
+maintainers:
+  - name: Ujjawal Prasad
+    email: ujjawal@streamsense.com
+    url: https://ujjawalprasad.com
+keywords:
+  - streaming
+  - analytics
+  - microservices
+  - kafka
+  - graphql
+  - kubernetes
+sources:
+  - https://github.com/8wali8/StreamSense
+dependencies:
+  - name: postgresql
+    version: "12.12.10"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+  - name: redis
+    version: "18.1.5"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+  - name: kafka
+    version: "25.3.5"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: kafka.enabled
+  - name: cassandra
+    version: "10.7.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: cassandra.enabled
+  - name: prometheus
+    version: "25.3.1"
+    repository: "https://prometheus-community.github.io/helm-charts"
+    condition: monitoring.prometheus.enabled
+  - name: grafana
+    version: "7.0.3"
+    repository: "https://grafana.github.io/helm-charts"
+    condition: monitoring.grafana.enabled
+annotations:
+  category: Analytics
+  licenses: MIT

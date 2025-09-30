@@ -1,0 +1,194 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: streamsense
+  labels:
+    app: postgres
+    tier: database
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+        tier: database
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15.4-alpine
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_DB
+          value: "streaming_analytics"
+        - name: POSTGRES_USER
+          value: "streaming_user"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: streamsense-secrets
+              key: postgres-password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: postgres-init
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - streaming_user
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - streaming_user
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: postgres-init
+        configMap:
+          name: postgres-init-config
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: streamsense
+  labels:
+    app: postgres
+    tier: database
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres
+  selector:
+    app: postgres
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-config
+  namespace: streamsense
+data:
+  init.sql: |
+    -- StreamSense Database Schema
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    
+    -- Chat Service Tables
+    CREATE TABLE IF NOT EXISTS chat_rooms (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        streamer_id VARCHAR(255) NOT NULL,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        message_count INTEGER DEFAULT 0,
+        active_user_count INTEGER DEFAULT 0
+    );
+    
+    CREATE TABLE IF NOT EXISTS chat_messages (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        room_id UUID REFERENCES chat_rooms(id),
+        user_id VARCHAR(255) NOT NULL,
+        username VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        sentiment FLOAT,
+        mentions TEXT[],
+        emotes TEXT[]
+    );
+    
+    -- Video Service Tables
+    CREATE TABLE IF NOT EXISTS sponsor_detections (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        streamer_id VARCHAR(255) NOT NULL,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        sponsor VARCHAR(255) NOT NULL,
+        confidence FLOAT NOT NULL,
+        bounding_box JSONB,
+        frame_url VARCHAR(500)
+    );
+    
+    CREATE TABLE IF NOT EXISTS stream_analytics (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        streamer_id VARCHAR(255) NOT NULL,
+        viewer_count INTEGER,
+        chat_activity FLOAT,
+        sentiment_score FLOAT,
+        sponsor_detections INTEGER DEFAULT 0,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    -- Sentiment Service Tables
+    CREATE TABLE IF NOT EXISTS sentiment_analysis (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        text TEXT NOT NULL,
+        sentiment VARCHAR(50) NOT NULL,
+        confidence FLOAT NOT NULL,
+        emotions JSONB,
+        keywords TEXT[],
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    -- Recommendation Service Tables
+    CREATE TABLE IF NOT EXISTS user_preferences (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id VARCHAR(255) NOT NULL UNIQUE,
+        categories TEXT[],
+        preferred_streamers TEXT[],
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    CREATE TABLE IF NOT EXISTS recommendations (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id VARCHAR(255) NOT NULL,
+        streamer_id VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        category VARCHAR(255),
+        confidence FLOAT NOT NULL,
+        reason TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    -- Indexes for performance
+    CREATE INDEX IF NOT EXISTS idx_chat_messages_room_id ON chat_messages(room_id);
+    CREATE INDEX IF NOT EXISTS idx_chat_messages_timestamp ON chat_messages(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_sponsor_detections_streamer_id ON sponsor_detections(streamer_id);
+    CREATE INDEX IF NOT EXISTS idx_sponsor_detections_timestamp ON sponsor_detections(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_stream_analytics_streamer_id ON stream_analytics(streamer_id);
+    CREATE INDEX IF NOT EXISTS idx_sentiment_analysis_created_at ON sentiment_analysis(created_at);
+    CREATE INDEX IF NOT EXISTS idx_recommendations_user_id ON recommendations(user_id);
+    
+    -- Grant permissions
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO streaming_user;
+    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO streaming_user;

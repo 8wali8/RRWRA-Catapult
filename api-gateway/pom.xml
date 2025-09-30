@@ -75,6 +75,23 @@
             <artifactId>zipkin-reporter-brave</artifactId>
         </dependency>
 
+        <!-- GraphQL Federation -->
+        <dependency>
+            <groupId>com.netflix.graphql.dgs</groupId>
+            <artifactId>graphql-dgs-spring-boot-starter</artifactId>
+            <version>5.5.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.apollographql.federation</groupId>
+            <artifactId>federation-graphql-java-support</artifactId>
+            <version>2.0.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.graphql-java</groupId>
+            <artifactId>graphql-java-extended-scalars</artifactId>
+            <version>20.2</version>
+        </dependency>
+
         <!-- Netflix Ribbon for Load Balancing -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
