@@ -1,0 +1,272 @@
+{{/*
+Ingress for StreamSense Application
+*/}}
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "streamsense.fullname" . }}-ingress
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+  annotations:
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- range .Values.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          - path: /api/gateway
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "streamsense.fullname" $ }}-api-gateway
+                port:
+                  number: 8080
+          - path: /api/chat
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "streamsense.fullname" $ }}-chat-service
+                port:
+                  number: 8081
+          - path: /api/sentiment
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "streamsense.fullname" $ }}-sentiment-service
+                port:
+                  number: 8082
+          - path: /api/video
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "streamsense.fullname" $ }}-video-service
+                port:
+                  number: 8083
+          - path: /api/graphql
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "streamsense.fullname" $ }}-graphql-service
+                port:
+                  number: 8084
+          - path: /api/recommendations
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "streamsense.fullname" $ }}-recommendation-service
+                port:
+                  number: 8085
+          - path: /api/ml
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "streamsense.fullname" $ }}-ml-engine
+                port:
+                  number: 5000
+          - path: /zipkin
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "streamsense.fullname" $ }}-zipkin
+                port:
+                  number: 9411
+          - path: /eureka
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "streamsense.fullname" $ }}-eureka
+                port:
+                  number: 8761
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "streamsense.fullname" $ }}-frontend
+                port:
+                  number: 3000
+    {{- end }}
+{{- end }}
+
+---
+{{/*
+Frontend Service (React Application)
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamsense.fullname" . }}-frontend
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  selector:
+    matchLabels:
+      {{- include "streamsense.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        {{- include "streamsense.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+        imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+        ports:
+        - containerPort: 3000
+        env:
+        - name: REACT_APP_API_URL
+          value: "http://{{ include "streamsense.fullname" . }}-api-gateway:8080"
+        - name: REACT_APP_GRAPHQL_URL
+          value: "http://{{ include "streamsense.fullname" . }}-graphql-service:8084/graphql"
+        - name: REACT_APP_WS_URL
+          value: "ws://{{ include "streamsense.fullname" . }}-graphql-service:8084/graphql"
+        resources:
+          {{- toYaml .Values.frontend.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamsense.fullname" . }}-frontend
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "streamsense.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+
+---
+{{/*
+Secrets for the application
+*/}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "streamsense.fullname" . }}-secrets
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+type: Opaque
+data:
+  postgres-password: {{ .Values.postgresql.password | b64enc }}
+  redis-password: {{ .Values.redis.password | b64enc }}
+  jwt-secret: {{ .Values.auth.jwtSecret | b64enc }}
+
+---
+{{/*
+Horizontal Pod Autoscaler for API Gateway
+*/}}
+{{- if .Values.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "streamsense.fullname" . }}-api-gateway-hpa
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "streamsense.fullname" . }}-api-gateway
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+---
+{{/*
+HPA for Chat Service
+*/}}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "streamsense.fullname" . }}-chat-service-hpa
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "streamsense.fullname" . }}-chat-service
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+---
+{{/*
+HPA for ML Engine
+*/}}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "streamsense.fullname" . }}-ml-engine-hpa
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "streamsense.fullname" . }}-ml-engine
+  minReplicas: {{ .Values.mlEngine.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.mlEngine.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+{{- end }}

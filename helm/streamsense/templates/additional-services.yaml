@@ -1,0 +1,277 @@
+{{/*
+GraphQL Service
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamsense.fullname" . }}-graphql-service
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: graphql-service
+spec:
+  replicas: {{ .Values.graphqlService.replicas }}
+  selector:
+    matchLabels:
+      {{- include "streamsense.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: graphql-service
+  template:
+    metadata:
+      labels:
+        {{- include "streamsense.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: graphql-service
+    spec:
+      containers:
+      - name: graphql-service
+        image: "{{ .Values.graphqlService.image.repository }}:{{ .Values.graphqlService.image.tag }}"
+        imagePullPolicy: {{ .Values.graphqlService.image.pullPolicy }}
+        ports:
+        - containerPort: 8084
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: {{ .Values.environment }}
+        - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+          value: "http://{{ include "streamsense.fullname" . }}-eureka:8761/eureka/"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://{{ include "streamsense.fullname" . }}-postgres:5432/{{ .Values.postgresql.database }}"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: {{ .Values.postgresql.username }}
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "streamsense.fullname" . }}-secrets
+              key: postgres-password
+        resources:
+          {{- toYaml .Values.graphqlService.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8084
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8084
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamsense.fullname" . }}-graphql-service
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: graphql-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8084
+    targetPort: 8084
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "streamsense.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: graphql-service
+
+---
+{{/*
+Recommendation Service
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamsense.fullname" . }}-recommendation-service
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: recommendation-service
+spec:
+  replicas: {{ .Values.recommendationService.replicas }}
+  selector:
+    matchLabels:
+      {{- include "streamsense.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: recommendation-service
+  template:
+    metadata:
+      labels:
+        {{- include "streamsense.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: recommendation-service
+    spec:
+      containers:
+      - name: recommendation-service
+        image: "{{ .Values.recommendationService.image.repository }}:{{ .Values.recommendationService.image.tag }}"
+        imagePullPolicy: {{ .Values.recommendationService.image.pullPolicy }}
+        ports:
+        - containerPort: 8085
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: {{ .Values.environment }}
+        - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+          value: "http://{{ include "streamsense.fullname" . }}-eureka:8761/eureka/"
+        - name: SPRING_DATA_CASSANDRA_CONTACT_POINTS
+          value: "{{ include "streamsense.fullname" . }}-cassandra"
+        - name: SPRING_DATA_CASSANDRA_KEYSPACE_NAME
+          value: {{ .Values.cassandra.keyspace }}
+        resources:
+          {{- toYaml .Values.recommendationService.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8085
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8085
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamsense.fullname" . }}-recommendation-service
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: recommendation-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8085
+    targetPort: 8085
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "streamsense.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: recommendation-service
+
+---
+{{/*
+Config Server
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamsense.fullname" . }}-config-server
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: config-server
+spec:
+  replicas: {{ .Values.configServer.replicas }}
+  selector:
+    matchLabels:
+      {{- include "streamsense.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: config-server
+  template:
+    metadata:
+      labels:
+        {{- include "streamsense.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: config-server
+    spec:
+      containers:
+      - name: config-server
+        image: "{{ .Values.configServer.image.repository }}:{{ .Values.configServer.image.tag }}"
+        imagePullPolicy: {{ .Values.configServer.image.pullPolicy }}
+        ports:
+        - containerPort: 8888
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: {{ .Values.environment }}
+        - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+          value: "http://{{ include "streamsense.fullname" . }}-eureka:8761/eureka/"
+        resources:
+          {{- toYaml .Values.configServer.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8888
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8888
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamsense.fullname" . }}-config-server
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: config-server
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8888
+    targetPort: 8888
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "streamsense.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: config-server
+
+---
+{{/*
+Zipkin Tracing
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamsense.fullname" . }}-zipkin
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: zipkin
+spec:
+  replicas: {{ .Values.zipkin.replicas }}
+  selector:
+    matchLabels:
+      {{- include "streamsense.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: zipkin
+  template:
+    metadata:
+      labels:
+        {{- include "streamsense.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: zipkin
+    spec:
+      containers:
+      - name: zipkin
+        image: "{{ .Values.zipkin.image.repository }}:{{ .Values.zipkin.image.tag }}"
+        imagePullPolicy: {{ .Values.zipkin.image.pullPolicy }}
+        ports:
+        - containerPort: 9411
+        env:
+        - name: STORAGE_TYPE
+          value: "mem"
+        resources:
+          {{- toYaml .Values.zipkin.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9411
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 9411
+          initialDelaySeconds: 15
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamsense.fullname" . }}-zipkin
+  labels:
+    {{- include "streamsense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: zipkin
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9411
+    targetPort: 9411
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "streamsense.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: zipkin
