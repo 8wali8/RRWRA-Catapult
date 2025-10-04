@@ -1,6 +1,6 @@
 # StreamSense
 
-**StreamSense** is an all in one data analytics platform for Twitch streams that provides real-time sponsor detection, sentiment analysis, and comprehensive stream monitoring capabilities. Originally developed in python for the 2025 Catapult hackathon at Purdue University, it was refactored by **Ujjawal Prasad** to be inspired by Netflix-style microservice architecture
+**StreamSense** is an all in one data analytics platform for Twitch streams that provides real-time sponsor detection, sentiment analysis, and comprehensive stream monitoring capabilities. Originally developed in python for the 2025 Catapult hackathon at Purdue University, refactored by **Ujjawal Prasad** with Netflix-inspired microservice architecture & tech stack
 
 ## Project Evolution
 
@@ -273,7 +273,5 @@ git push origin feature/new-microservice
 - **Advanced ML**: Real-time model training and deployment pipelines  
 - **Edge Computing**: Process video frames at CDN edge locations
 
-## Contact & Professional Showcase
-
-### **Professional Contact**
+### **Contact**
 - **Portfolio**: [ujjawalprasad.com](https://www.ujjawalprasad.com) **GitHub**: [8wali8](https://github.com/8wali8) | **LinkedIn**: [Ujjawal Prasad](https://linkedin.com/in/ujjawal-prasad)
