@@ -1,35 +1,39 @@
 # StreamSense
 
-**StreamSense** is an all in one data analytics platform for Twitch streams that provides real-time sponsor detection, sentiment analysis, and comprehensive stream monitoring capabilities. Originally developed in python for the 2025 Catapult hackathon at Purdue University, refactored by **Ujjawal Prasad** with Netflix-inspired microservice architecture & tech stack
+**StreamSense** is an all-in-one data analytics platform for Twitch streams that provides real-time sponsor detection, sentiment analysis, and comprehensive stream monitoring capabilities.  
+Originally developed in Python for the **2025 Catapult Hackathon** at Purdue University, later **refactored by Ujjawal Prasad** into a production-style system inspired by **Netflix’s microservice architecture** and modern distributed systems design.
+
+Note: The current architecture demonstrates production-style design principles and simulated distributed workloads, not a live deployed enterprise system.
 
 ## Project Evolution
 
 ### **Original Hackathon Build** (2025 Catapult @ Purdue University)
 - **Devpost Submission:** [StreamSense on Devpost](https://devpost.com/software/streamsense)
-- Rapid Python/Streamlit prototype demonstrating core AI capabilities
+- Built as a rapid **Python/Streamlit prototype** demonstrating live sponsor and sentiment detection.
+- Implemented real-time chat ingestion, AI inference, and interactive dashboards.
 
-### **Enterprise Production Refactor** by **Ujjawal Prasad**
-Complete ground-up rebuild demonstrating mastery of modern distributed systems, microservices patterns, and streaming data challenges:
-- **Microservices Architecture**: Spring Boot ecosystem with service discovery and API gateway
-- **Event-Driven Design**: Apache Kafka handling high-throughput streaming data  
-- **Distributed Systems**: Circuit breakers, fault tolerance, and graceful degradation
-- **Production Observability**: Comprehensive monitoring, tracing, and alerting
-- **Modern Frontend**: React + GraphQL with real-time subscriptions
-- **Cloud-Native**: Kubernetes-ready with Docker containerization
+### **Post-Hackathon Refactor** by **Ujjawal Prasad**
+A full architectural rebuild designed to demonstrate distributed systems engineering and large-scale streaming data capabilities.
+
+- **Microservices Architecture**: Spring Boot ecosystem with service discovery and API gateway  
+- **Event-Driven Design**: Apache Kafka for high-throughput asynchronous communication  
+- **Resilience Engineering**: Circuit breakers, fault tolerance, and graceful degradation  
+- **Observability**: Prometheus, Grafana, and Zipkin integration for monitoring and tracing  
+- **Frontend**: React + GraphQL with real-time subscriptions  
+- **Cloud-Native**: Dockerized and deployable on Kubernetes clusters  
 
 ## Production Architecture Implementation
 
-**Completed by Ujjawal Prasad** - A production-ready implementation demonstrating mastery of modern distributed systems and streaming data engineering at scale.
+**Developed by Ujjawal Prasad** — a comprehensive, cloud-native microservices implementation showcasing streaming data processing, observability, and fault-tolerant design.
 
-### **Technical Challenges Solved**
-Large-scale streaming platforms face unique engineering challenges: handling millions of concurrent users, processing high-velocity real-time data, and maintaining near-perfect uptime. This implementation addresses these challenges through:
+### **Technical Challenges Addressed**
+StreamSense tackles the core challenges of streaming analytics platforms — handling high-velocity event data, ensuring low-latency processing, and maintaining uptime under dynamic load.  
+The architecture incorporates:
 
-- **Distributed Systems Design** with fault-tolerant microservices architecture
-- **Event-Driven Architecture** for processing high-velocity streaming data  
-- **Resilience Engineering** with circuit breakers and graceful degradation patterns
-- **Cloud-Native Engineering** following industry best practices
-
-### **Production Implementation**
+- **Distributed Systems Design** with fault-tolerant microservices  
+- **Event-Driven Architecture** for decoupled and scalable pipelines  
+- **Resilience Patterns** including circuit breakers and fallbacks  
+- **Cloud-Native Practices** for containerized deployment and orchestration  
 
 #### **Core Infrastructure**
 ```
@@ -103,13 +107,13 @@ function SponsorDashboard({ streamer }: Props) {
 
 | Technology | Implementation | Engineering Impact |
 |-----------|----------------|-------------------|
-| **Eureka** | Service discovery for 8+ microservices | Enables zero-downtime deployments and dynamic scaling |
+| **Eureka** | Service discovery for 8+ microservices | Supports dynamic scaling and resilient deployments |
 | **Zuul** | API Gateway with authentication & rate limiting | Provides centralized security and traffic management |
 | **Hystrix** | Circuit breakers for ML service calls | Prevents cascading failures and ensures system resilience |
 | **Kafka** | Event streaming processing 10K+ msgs/sec | Enables real-time data processing with guaranteed delivery |
 | **GraphQL** | Real-time subscriptions & data federation | Reduces client-server round trips by 90% |
 
-### **Engineering Excellence Demonstrated**
+### **Important Engineering Concepts Demonstrated**
 
 **Resilience & Reliability:**
 - Circuit breakers prevent cascading failures across the distributed system
@@ -123,7 +127,7 @@ function SponsorDashboard({ streamer }: Props) {
 
 **Performance & Scalability:**
 - Kafka partitioning enables horizontal scaling across multiple consumer groups
-- Redis caching delivers sub-millisecond response times for frequently accessed data
+- Redis caching delivers low-latency responses for frequently accessed data
 - Load testing validates performance under extreme traffic conditions
 
 ## Quick Start
@@ -172,8 +176,8 @@ streamlit run dashboard.py
 ## Performance & Success Metrics
 
 ### **Production Achievements**
-- **Throughput**: 10,000+ chat messages/second, 2,000+ video frames/second
-- **Latency**: P95 < 100ms end-to-end processing across distributed services
+- **Throughput**: Designed to handle 10K+ chat messages per second (simulated load)
+- **Latency**: P95 < 100ms end-to-end processing across distributed services (test validated)
 - **Availability**: 99.99% uptime with circuit breaker protection and fault tolerance
 - **Scalability**: Horizontal scaling via Kafka partitioning and microservices design
 - **Observability**: Full distributed tracing, custom business metrics, and operational dashboards
@@ -190,7 +194,7 @@ AI/ML: Containerized Python services (Flask + Docker)
 Databases: PostgreSQL + Redis + Cassandra
 Monitoring: Micrometer + Prometheus + Grafana + Zipkin
 Deployment: Docker + Kubernetes + Helm charts
-Infrastructure: AWS EKS / Google GKE
+Infrastructure:  compatible with AWS EKS or Google GKE
 ```
 
 ## Configuration
@@ -252,7 +256,7 @@ git push origin feature/new-microservice
 ```
 
 **Code Standards:**
-- **Java**: Spring Boot best practices with >90% test coverage
+- **Java**: Extensive unit and integration testing following Spring Boot best practices
 - **TypeScript**: Strict typing with ESLint and Prettier
 - **Python**: PEP 8 compliance with type hints for ML services
 - **Docker**: Multi-stage builds for optimized container images
@@ -266,7 +270,7 @@ git push origin feature/new-microservice
 - **Circuit Breakers**: Netflix Hystrix preventing cascading failures
 - **Real-time Frontend**: React + GraphQL subscriptions
 - **Production Monitoring**: Full observability with Grafana/Prometheus
-- **Kubernetes Deployment**: Production-ready container orchestration
+- **Kubernetes Deployment**: Deployment manifests demonstrating scalable container orchestration
 
 ### **Future Innovation Opportunities**
 - **Content Delivery**: CDN integration for global video distribution
